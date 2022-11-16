@@ -156,6 +156,8 @@ function masco_formulario_admin()
     $masco_tabla = $wpdb->prefix . 'canastillas';
     $usuariosMascobox = $wpdb->get_results("SELECT * FROM $masco_tabla");
     echo '<div class="wrap"><h1>Lista de usuarios</h1>';
+    $ajax_url = admin_url('admin-ajax.php?action=csv_pull');
+    echo "<div><a href='$ajax_url'>Exportar datos</a></div>";
     echo '<table class="wp-list-table widefat fixed striped">';
     echo '<thead><tr><th >Nombre</th><th >Apellidos</th>';
     echo '<th>Nombre Mascota</th><th >correo</th><th>tipo</th><th>Raza</th><th>Fecha de nacimiento</th><th>veterinario</th>';
@@ -206,3 +208,38 @@ function masco_Borra_usuario()
 		)
 	);
 }
+// action de exportacion de tabla
+add_action('wp_ajax_csv_pull', 'masco_usuarios_csv_pull');
+/**
+ *exportar tabla a csv
+ * 
+ * @return void
+ */
+function masco_usuarios_csv_pull() {
+
+    global $wpdb;
+
+    $table = 'canastillas';// nombre de tabla
+    $file = 'masco_canastillas_csv'; // nombre de csv
+    $results = $wpdb->get_results("SELECT * FROM $wpdb->prefix$table",ARRAY_A );
+    
+    $casillas = array('clave', 'Nombre', 'Apellidos', 'correo', 'tipo', 'Raza', 'Fecha de nacimiento'); 
+    // Display column names as first row 
+    $csv_output = implode(", ", array_values($casillas)) . "\n"; 
+
+    if(count($results) > 0){
+       foreach($results as $result){
+       $result = array_values($result);
+       $result = implode(", ", $result);
+       $csv_output .= $result."\n";
+     } 
+   }
+
+   $filename = $file."_".date("Y-m-d_H-i",time());
+   header("Content-type: application/vnd.ms-excel");
+   header("Content-disposition: csv" . date("Y-m-d") . ".csv");
+   header( "Content-disposition: filename=".$filename.".csv");
+   print $csv_output;
+   exit;
+
+ }

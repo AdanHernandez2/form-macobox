@@ -33,21 +33,24 @@ function masco_tabla_init() {
 }
 
 add_shortcode('form-mascobox', 'form_plugin_mascobox');
+
 function form_plugin_mascobox() {
 
     global $wpdb;
-    $masco_tabla = $wpdb->prefix . 'canastillas';
 
     if( !empty($_POST)
-    AND$_POST['nombre'] != '' 
-    AND $_POST['apellidos'] != ''
-    AND $_POST['nombre_mascota'] != ''
-    AND is_email($_POST['correo'])
-    AND $_POST['tipo_mascota'] != ''
-    AND $_POST['raza'] != ''
-    AND $_POST['fecha_nacimiento'] != ''
-    AND $_POST['codigo_postal'] != ''      
-    AND $_POST['aceptacion'] == '1') {
+        && $_POST['nombre'] != '' 
+        && $_POST['apellidos'] != ''
+        && $_POST['nombre_mascota'] != ''
+        && is_email($_POST['correo'])
+        && $_POST['tipo_mascota'] != ''
+        && $_POST['raza'] != ''
+        && $_POST['fecha_nacimiento'] != ''
+        && $_POST['codigo_postal'] != ''      
+        && $_POST['aceptacion'] == '1'
+    ) {
+
+        $masco_tabla = $wpdb->prefix . 'canastillas';
 
         $nombre = sanitize_text_field($_POST['nombre']);
         $apellidos = sanitize_text_field($_POST['apellidos']);
@@ -59,6 +62,7 @@ function form_plugin_mascobox() {
         $codigo_postal = (int)$_POST['codigo_postal'];
         $aceptacion = (int)$_POST['aceptacion'];
         $created_at = date('Y-m-d H:i:s');
+
         $wpdb->insert(
             $masco_tabla , 
             array(
@@ -74,6 +78,7 @@ function form_plugin_mascobox() {
                 'created_at' => $created_at,
             )
             );
+            //colocar msj emergente despues del envio
     }
 
     wp_enqueue_style('css_mascobox', plugins_url('/public/frondend/style.css', __FILE__));
@@ -81,7 +86,7 @@ function form_plugin_mascobox() {
     ob_start();
     ?>
         <form action="<?php get_the_permalink();?>" method="post" class="cuestionario">
-        <?php wp_nonce_field('graba_aspirante', 'aspirante_nonce');?>
+        <?php wp_nonce_field('graba_usuario', 'usuario_nonce');?>
             <div class="form-input">
                 <label for='correo'>Direccion de e-mail</label>
                 <input type="email" name="correo" id="correo" required>
@@ -139,7 +144,7 @@ add_action("admin_menu", "masco_form_menu");
  *
  * @return void
  */
-function masco_form_menu()
+function masco_form_menu() 
 {
     add_menu_page("Formulario mascobox", "mascobox", "manage_options",
         "masco_form_menu", "masco_formulario_admin", "dashicons-feedback", 75);
@@ -167,10 +172,37 @@ function masco_formulario_admin()
         echo "<tr><td>$nombre</td>";
         echo "<td>$apellidos</td><td>$nombre_mascota</td><td>$correo</td><td>$tipo_mascota</td>";
         echo "<td>$raza</td><td>$fecha_nacimiento</td>";
-		$url_borrar = admin_url('admin-post.php') . '?action=borra_usuario&id='
+		$url_borrar = admin_url('admin-post.php') . '?action=borra_mascobox&id='
 			. $usuarioMasco->id;
 		echo "<td><a href='$url_borrar'>Borrar</a></td>";
 		echo "</tr>";
     }
     echo '</tbody></table></div>';
+}
+
+// Vincula la función de borrado con un hook de admin_post
+add_action('admin_post_borra_mascobox', 'masco_Borra_usuario');
+/**
+ * Borra un registro de usuario usando admin-post.php
+ * 
+ * @return void
+ */
+function masco_Borra_usuario()
+{
+	global $wpdb;
+	$url_origen = admin_url('admin.php') . '?page=masco_form_menu';
+	// && current_user_can('manage_options')
+	if (isset($_GET['id'])) {
+		$id = (int) $_GET['id'];
+        $masco_tabla = $wpdb->prefix . 'canastillas';
+		$wpdb->delete($masco_tabla, array('id' => $id));
+		$status = 'success';
+	} else {
+		$status = 'error';
+	}
+	wp_safe_redirect(
+		esc_url_raw(
+			add_query_arg( 'masco_usuario_status', $status, $url_origen )
+		)
+	);
 }

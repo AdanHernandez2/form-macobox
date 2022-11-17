@@ -37,7 +37,7 @@ function masco_tabla_init() {
 }
 
 //shortcode de formulario
-include_once plugin_dir_path(__FILE__) . '/frondend/formulario_display.php';
+include_once plugin_dir_path(__FILE__) . '/frontend/formulario_display.php';
 
 add_action("admin_menu", "masco_form_menu");
 /**
